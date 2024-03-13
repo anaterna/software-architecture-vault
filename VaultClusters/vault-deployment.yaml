@@ -1,0 +1,57 @@
+# vault-setup.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-config-NAMESPACE
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault-NAMESPACE
+spec:
+  ports:
+  - port: ARG_PORT
+    targetPort: ARG_PORT
+  selector:
+    app: vault-NAMESPACE
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-NAMESPACE
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault-NAMESPACE
+  template:
+    metadata:
+      labels:
+        app: vault-NAMESPACE
+    spec:
+      containers:
+      - name: vault-NAMESPACE
+        image: vault:1.7.3
+        ports:
+        - containerPort: ARG_PORT
+        volumeMounts:
+        - name: vault-data
+          mountPath: /vault/data
+        - name: vault-logs
+          mountPath: /vault/logs
+      volumes:
+      - name: vault-data
+        emptyDir: {}
+      - name: vault-logs
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-secret-NAMESPACE
+stringData:
+  token: ARG_TOKEN
