@@ -6,20 +6,20 @@ metadata:
     app: mongo
 spec:
   replicas: 1
-  selector:   # define the relationship between the deployment and its pods
+  selector:
     matchLabels:
       app: mongo
-  template:     # configuration for the pods
+  template:
     metadata:
       labels:
         app: mongo
     spec:
-      containers:   # configure the pods
-      - name: mondodb
+      containers:
+      - name: mongodb
         image: mongo:5.0
         ports:
         - containerPort: 27017
-        env: # reference the secret to set the environment variables when the mongo instance starts
+        env:
         - name: MONGO_INITDB_ROOT_USERNAME
           valueFrom:
             secretKeyRef:
@@ -29,17 +29,40 @@ spec:
           valueFrom:
             secretKeyRef:
               name: mongo-secret
-              key: mongo-password
-
+              key: mongo-password  
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: mongo-service
 spec:
-  selector:     # define the relationship between the service and its pods to forward reguests to the pods
-    app: mongo  # the label of the pods
+  type: NodePort
+  selector:
+    app: mongo
   ports:
-    - protocol: TCP
-      port: 80
+    - port: 27017
+      protocol: TCP
       targetPort: 27017
+      nodePort: 30100 
+      name: mongoport
+status:
+  loadBalancer: {}
+
+
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: mongo-config
+# data:
+#   mongo-url: mongo-service
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongo-secret
+type: Opaque
+data:
+  mongo-user: bW9uZ291c2Vy
+  mongo-password: bW9uZ29wYXNzd29yZA==

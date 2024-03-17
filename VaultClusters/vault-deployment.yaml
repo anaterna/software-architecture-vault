@@ -4,7 +4,6 @@ kind: ConfigMap
 metadata:
   name: vault-config-NAMESPACE
 
-
 ---
 apiVersion: v1
 kind: Service
@@ -35,6 +34,24 @@ spec:
       containers:
       - name: vault-NAMESPACE
         image: vault:1.7.3
+        command:
+        - "/bin/sh"
+        - "-c"
+        - |
+          cat <<EOF > /vault/config/vault.hcl
+          storage "file" {
+            path = "/vault/data"
+          }
+          api_addr = "https://127.0.0.1:ARG_PORT"
+          cluster_addr  = "https://127.0.0.1:ND_PORT"
+          listener "tcp" {
+            address = "127.0.0.1:ARG_PORT"
+            cluster_address = "127.0.0.1:ND_PORT"
+            tls_disable = 1
+          }
+          disable_mlock = true
+          EOF
+          vault server -config=/vault/config/vault.hcl -log-level=info
         ports:
         - containerPort: ARG_PORT
         volumeMounts:
@@ -42,6 +59,13 @@ spec:
           mountPath: /vault/data
         - name: vault-logs
           mountPath: /vault/logs
+        resources:
+          requests:
+            memory: "256Mi"  # Request 256 megabytes of memory
+            cpu: "100m"       # Request 100 milliCPU (0.1 CPU core)
+          limits:
+            memory: "512Mi"  # Limit memory usage to 512 megabytes
+            cpu: "200m"       # Limit CPU usage to 200 milliCPU (0.2 CPU core)
       volumes:
       - name: vault-data
         emptyDir: {}

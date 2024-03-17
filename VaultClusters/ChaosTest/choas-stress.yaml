@@ -1,0 +1,21 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: SCENARIO_NAME
+  namespace: chaos-testing
+spec:
+  mode: one
+  selector:
+    namespaces:
+      - default
+    fieldSelectors:
+      'metadata.name': POD_NAME
+  stressors:
+    memory:
+      workers: 4
+      size: 30MB
+      options: [""]
+    cpu:
+      workers: 4
+      load: 70
+  duration: "3m"

@@ -51,7 +51,7 @@ def retrieve_secret(path):
 
 def main():
     # Path to store the secret
-    secret_path = "secret/my-secret"
+    secret_path = "secrets"
     # Create a new secret
     secret_data = {"username": "admin", "password": "admin123"}
     create_secret(path=secret_path, data=secret_data)
