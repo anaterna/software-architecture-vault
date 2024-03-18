@@ -19,8 +19,11 @@ for i in "${!pods[@]}"; do
     yaml_file="stress-chaos-$i.yaml"
 
     # Replace placeholders in the template YAML file with actual values
-    sed -e "s/{{SCENARIO_NAME}}/$namespace/g" -e "s/{{POD_NAME}}/$pod_name/g" "$yaml_template" > "$yaml_file"
+    sed -e "s/SCENARIO_NAME/$namespace/g" -e "s/POD_NAME/$pod_name/g" "$yaml_template" > "$yaml_file"
 
+    cat "$yaml_file"
     # Apply the generated YAML to create chaos scenario
     kubectl apply -f "$yaml_file"
+
+    # Remove the generated YAML file
 done

@@ -1,14 +1,16 @@
 from pymongo import MongoClient
 from datetime import datetime
+import sys
+import json
 
 # MongoDB connection details
-mongo_service_port = 41597
+mongo_service_port = 39585
 mongo_host = "mongodb://mongouser:mongopassword@127.0.0.1:" + str(mongo_service_port)
 mongo_db = "metrics"  # Change this to your MongoDB database name
 mongo_collection = "pod_metrics"  # Change this to your MongoDB collection name
 
 # Function to insert metrics data into MongoDB
-def insert_into_mongodb(resource_name, cpu_usage, memory_usage):
+def insert_into_mongodb(resource_name, cpu_usage, memory_usage, pod_port):
     try:
         client = MongoClient(host=mongo_host, directConnection=True)
         db = client[mongo_db]
@@ -19,6 +21,7 @@ def insert_into_mongodb(resource_name, cpu_usage, memory_usage):
             "resource_name": resource_name,
             "cpu_usage": cpu_usage,
             "memory_usage": memory_usage,
+            "port": pod_port,
             "timestamp": datetime.now()
         }
 
@@ -50,8 +53,15 @@ def retrieve_from_mongodb(pod_name):
             print("Resource Name:", doc["resource_name"])
             print("CPU Usage:", doc["cpu_usage"])
             print("Memory Usage:", doc["memory_usage"])
+            print("Port:", doc["port"])
             print("Timestamp:", doc["timestamp"])
 
+        if result:
+            # Return the retrieved data as JSON string
+            return json.dumps(result)
+        else:
+            return json.dumps({"error": f"No data found for pod {pod_name}"})
+        
     except Exception as e:
         print("Error occurred while retrieving data from MongoDB:", e)
 
@@ -60,13 +70,36 @@ def retrieve_from_mongodb(pod_name):
         client.close()
 
 
-# Example usage
 if __name__ == "__main__":
-    # Example data
-    resource_name = "example_pod"
-    cpu_usage = "100m"
-    memory_usage = "256Mi"
+    # Check if the correct number of arguments is provided
+    if len(sys.argv) < 2:
+        print("Usage: python script.py <function_name> [arguments]")
+        sys.exit(1)
 
-    # Insert data into MongoDB
-    #insert_into_mongodb(resource_name, cpu_usage, memory_usage)
-    retrieve_from_mongodb(resource_name)
+    function_name = sys.argv[1]
+
+    # Call the specified function based on the command-line argument
+    if function_name == "insert":
+        # Check if the correct number of arguments is provided
+        if len(sys.argv) < 5:
+            print("Usage: python script.py insert <resource_name> <cpu_usage> <memory_usage> <pod_port>")
+            sys.exit(1)
+
+        resource_name = sys.argv[2]
+        cpu_usage = sys.argv[3]
+        memory_usage = sys.argv[4]
+
+        insert_into_mongodb(resource_name, cpu_usage, memory_usage)
+
+    elif function_name == "retrieve":
+        # Check if the correct number of arguments is provided
+        if len(sys.argv) != 3:
+            print("Usage: python script.py retrieve <pod_name>")
+            sys.exit(1)
+
+        pod_name = sys.argv[2]
+        retrieve_from_mongodb(pod_name)
+
+    else:
+        print("Invalid function name. Available functions: insert, retrieve")
+        sys.exit(1)

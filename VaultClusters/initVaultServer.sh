@@ -3,10 +3,8 @@
 # Function to initialize and configure a Vault server
 # Parameters:
 #   - port: The port number to use for the Vault server
-#   - service: The name of the Kubernetes service associated with the Vault server
 init_server() {
     local port=$1
-    local service=$2
 
     # Set the VAULT_ADDR environment variable to the Vault server address
     export VAULT_ADDR="http://127.0.0.1:$port"    
@@ -45,4 +43,4 @@ init_server() {
 
 
 # Initialize and configure the primary Vault server
-init_server $1 $2
+init_server $1
