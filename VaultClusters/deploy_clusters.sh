@@ -15,7 +15,6 @@ deploy_vault() {
   cat vault-config-$port.yaml
     
   # Clean up temporary YAML file
-  rm vault-config-$port.yaml
 }
 
 # Deploy primary Vault cluster

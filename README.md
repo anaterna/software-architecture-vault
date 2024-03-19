@@ -75,6 +75,9 @@ Before triggering a fault in the primary Vault cluster, stress testing is perfor
     
 
 ## Usage
+
+### Initialize the set-up:
+
 1. Clone this repository.
 2. Run `minikube start` to set up a single-node Kubernetes cluster within the Minikube VM. This cluster includes the necessary components such as the API server, scheduler, controller-manager, and etcd for managing containers and orchestrating workloads. **Note**: for this POC, we will run Kubernetes clusters inside Minikube.
 3.  Go to `VaultClusters/` and run `./deploy_clusters.sh`. This will deploy all the Kubernetes resources under `vault-deployment.yaml` to create one primary and three secondary Vault clusters.
@@ -86,14 +89,22 @@ Before triggering a fault in the primary Vault cluster, stress testing is perfor
 - The output of the above step will display the root token, make sure you export it as a variable to your environment: `export VAULT_TOKEN=<root_token>` as the script in the above step only exports it to its execution environment and is lost once the script terminated.
 
 
-To run the Mongo server: 
+### To run the Mongo server: 
 1. Go to `System/Utils/MongoDB` and run `kubectl apply -f mongo.yaml`. This will create and deploy mongo related Kubernetes resources that are defined in that `yaml`. Run `kubectl get all` to check if the pod is running, overwise, wait for it.
 2. Open a new terminal and run `minikube service list`. Check if the `mongo-service` is there. If it is not, wait a couple of seconds.
 3. Execute `minikube service mongo-service` and do not close this connection and consequently, this terminal. Make sure to execute subsequent commands in another terminal.
 4. Use the port with IP address `127.0.0.1` and configure this port in the `mongo_client.py` file for `mongo_service_port` variable. This will expose the Kubernetes service of the Mongo deployemnt outside of the minikube cluster to your local environment. 
 
 
+### Stress test
 Execute Stress Test on all vault clusters which will load the memory and CPU utilization for a duration of 3 minutes.
-1. Go to `VaultClusters/ChaosTest` and run the script `./run_stress_tests.sh`
+1. Go to `VaultClusters/ChaosTest` and run the script `./run_stress_tests.sh`. This will configure the `chaos-stress.yaml` deployment of a StressChaos test for each Vault cluster. Specifically, it is configured to continously send trafic to the Vault clusters to increase the memory resources up to 100MB and raise the CPU capacity to 80% for a duration of 30 seconds.
+
+
+### System implementation and usage
+1. To trigger the system, first terminate the primary cluster: go to `VaultClusters` and execute `kubectl delete -f vault-config-8202.yaml`. Note that in real life scenarios, the failure of the primary cluster might differ. For instance, it can still function, but its responsiveness and continuous availability might shrink or there could be some errors that require full failover of the primary cluster to troubleshoot the issue. That being said, the primary vault cluster might still function, but not to the desired capacity or quality. For simplicity sake, we decide to fully terminate the server.
+2. 
+
+
 ## Teardown
 If you want to delete all the Kubernetes resources you configured, just run `minikube delete --all`. 

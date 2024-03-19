@@ -20,14 +20,10 @@ fetch_and_insert_metrics() {
 
     echo "CPU usage for pod $pod_name: $cpu_usage"
     echo "Memory usage for pod $pod_name: $memory_usage"
+    echo "Port for pod $pod_name: $port"
     
-    # # Insert metrics into MongoDB
-    # python3 ../Utils/mongo_client.py insert "$pod_name" "cpu_usage" "memory_usage" "$container_restart_count" "$port"
-
-    # # Retrieve data from MongoDB using Python script and capture output
-    # mongodb_output=$(python3 ../Utils/mongo_client.py retrieve "$pod_name")
-    # echo "MongoDB output for pod $pod_name:"
-    # echo "$mongodb_output"
+    # Insert metrics into MongoDB
+    python3 ../Utils/mongo_client.py insert $pod_name $cpu_usage $memory_usage $container_restart_count $port
 }
 
 # Function to get pod IDs
@@ -44,8 +40,9 @@ get_pod_ids() {
 
 # Main script
 main() {
-    initial_port = 8202
-    pod_names=("vault-primary" "vault-secondary1" "vault-secondary2" "vault-secondary3")
+    print("---Fetching and inserting metrics for Vault secondary clusters...")
+    initial_port=8204
+    pod_names=("vault-secondary1" "vault-secondary2" "vault-secondary3")
     
     # Namespace where pods are located
     namespace="default"
@@ -70,8 +67,11 @@ main() {
     for pod_id in "${pod_IDS[@]}"; do
         # Get pod ID for each pod name
         fetch_and_insert_metrics "$pod_id" "$namespace" "$initial_port"
-        initial_port=$((initial_port+2))
+        initial_port=$(($initial_port + 2))
     done
+
+    #Execute the next script that will determine the best cluster to use
+    python3 ../Utils/determine.py
 }
 
 # Execute the main script

@@ -4,13 +4,13 @@ import sys
 import json
 
 # MongoDB connection details
-mongo_service_port = 39585
+mongo_service_port = 36099
 mongo_host = "mongodb://mongouser:mongopassword@127.0.0.1:" + str(mongo_service_port)
 mongo_db = "metrics"  # Change this to your MongoDB database name
 mongo_collection = "pod_metrics"  # Change this to your MongoDB collection name
 
 # Function to insert metrics data into MongoDB
-def insert_into_mongodb(resource_name, cpu_usage, memory_usage, pod_port):
+def insert_into_mongodb(resource_name, cpu_usage, memory_usage, pod_port, container_restart_count):
     try:
         client = MongoClient(host=mongo_host, directConnection=True)
         db = client[mongo_db]
@@ -21,14 +21,14 @@ def insert_into_mongodb(resource_name, cpu_usage, memory_usage, pod_port):
             "resource_name": resource_name,
             "cpu_usage": cpu_usage,
             "memory_usage": memory_usage,
+            "container_restart_count": container_restart_count,
             "port": pod_port,
-            "timestamp": datetime.now()
         }
 
         # Insert document into MongoDB collection
         collection.insert_one(document)
         print("Metrics data inserted into MongoDB successfully.")
-
+        #collection.delete_many({})
     except Exception as e:
         print("Error occurred while inserting data into MongoDB:", e)
 
@@ -48,17 +48,20 @@ def retrieve_from_mongodb(pod_name):
         query = {"resource_name": pod_name}
         result = collection.find(query)
 
+        # Convert cursor to list of dictionaries
+        data = list(result)
+
         # Print retrieved data
-        for doc in result:
+        for doc in data:
             print("Resource Name:", doc["resource_name"])
             print("CPU Usage:", doc["cpu_usage"])
             print("Memory Usage:", doc["memory_usage"])
             print("Port:", doc["port"])
-            print("Timestamp:", doc["timestamp"])
+            print("Container Restart Count:", doc["container_restart_count"])
 
-        if result:
+        if data:
             # Return the retrieved data as JSON string
-            return json.dumps(result)
+            return data
         else:
             return json.dumps({"error": f"No data found for pod {pod_name}"})
         
@@ -82,14 +85,16 @@ if __name__ == "__main__":
     if function_name == "insert":
         # Check if the correct number of arguments is provided
         if len(sys.argv) < 5:
-            print("Usage: python script.py insert <resource_name> <cpu_usage> <memory_usage> <pod_port>")
+            print("Usage: python script.py insert <resource_name> <cpu_usage> <memory_usage> <container_restart_count> <pod_port>")
             sys.exit(1)
 
         resource_name = sys.argv[2]
         cpu_usage = sys.argv[3]
         memory_usage = sys.argv[4]
+        container_restart_count = sys.argv[5]
+        pod_port = sys.argv[6]
 
-        insert_into_mongodb(resource_name, cpu_usage, memory_usage)
+        insert_into_mongodb(resource_name, cpu_usage, memory_usage, pod_port, container_restart_count)
 
     elif function_name == "retrieve":
         # Check if the correct number of arguments is provided

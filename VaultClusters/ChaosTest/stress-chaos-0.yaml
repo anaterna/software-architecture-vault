@@ -8,8 +8,8 @@ spec:
   selector:
     namespaces:
       - 'default'
-    fieldSelectors:
-      'metadata.name': vault-primary  
+    labelSelectors:
+      'app': vault-primary  
   stressors:
     memory:
       workers: 4
