@@ -1,0 +1,81 @@
+# vault-setup.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-config-NAMESPACE
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault-NAMESPACE
+spec:
+  ports:
+  - port: ARG_PORT
+    targetPort: ARG_PORT
+  selector:
+    app: vault-NAMESPACE
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-NAMESPACE
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault-NAMESPACE
+  template:
+    metadata:
+      labels:
+        app: vault-NAMESPACE
+    spec:
+      containers:
+      - name: vault-NAMESPACE
+        image: vault:1.7.3
+        command:
+        - "/bin/sh"
+        - "-c"
+        - |
+          cat <<EOF > /vault/config/vault.hcl
+          storage "file" {
+            path = "/vault/data"
+          }
+          api_addr = "https://127.0.0.1:ARG_PORT"
+          cluster_addr  = "https://127.0.0.1:ND_PORT"
+          listener "tcp" {
+            address = "127.0.0.1:ARG_PORT"
+            cluster_address = "127.0.0.1:ND_PORT"
+            tls_disable = 1
+          }
+          disable_mlock = true
+          EOF
+          vault server -config=/vault/config/vault.hcl -log-level=info
+        ports:
+        - containerPort: ARG_PORT
+        volumeMounts:
+        - name: vault-data
+          mountPath: /vault/data
+        - name: vault-logs
+          mountPath: /vault/logs
+        resources:
+          requests:
+            memory: "256Mi"  # Request 256 megabytes of memory
+            cpu: "100m"       # Request 100 milliCPU (0.1 CPU core)
+          limits:
+            memory: "512Mi"  # Limit memory usage to 512 megabytes
+            cpu: "200m"       # Limit CPU usage to 200 milliCPU (0.2 CPU core)
+      volumes:
+      - name: vault-data
+        emptyDir: {}
+      - name: vault-logs
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-secret-NAMESPACE
+stringData:
+  token: ARG_TOKEN
